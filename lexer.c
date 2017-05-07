@@ -64,3 +64,32 @@ void token_next(Token *t)
 		can_be_unary = true;
 	}
 }
+
+void token_print(Token *t)
+{
+	switch (t->type) {
+
+		case FINAL:
+			break;
+
+		case INTEGER:
+			printf("%u ", t->data.value_int);
+			break;
+
+		case FLOATING:
+			printf("%ld ", t->data.value_float);
+			break;
+
+		case VARIABLE:
+			printf("%c ", t->data.variable);
+			break;
+
+		case OPERATOR:
+			printf("%c ", t->data.operator);
+			break;
+
+		case BRACKET:
+			printf("%c ", t->data.is_left_bracket ? '(' : ')');
+			break;
+	}
+}
