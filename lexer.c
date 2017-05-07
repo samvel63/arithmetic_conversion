@@ -26,7 +26,7 @@ void token_next(Token *t)
 		scanf("%f", &result);
 
 		if (result == (int) result) {
-			t->type = INTEGER:
+			t->type = INTEGER;
 			t->data.value_int = (int) result;
 		} else {
 			t->type = FLOATING;
@@ -73,23 +73,23 @@ void token_print(Token *t)
 			break;
 
 		case INTEGER:
-			printf("%u ", t->data.value_int);
+			printf("%u", t->data.value_int);
 			break;
 
 		case FLOATING:
-			printf("%ld ", t->data.value_float);
+			printf("%lf", t->data.value_float);
 			break;
 
 		case VARIABLE:
-			printf("%c ", t->data.variable);
+			printf("%c", t->data.variable);
 			break;
 
 		case OPERATOR:
-			printf("%c ", t->data.operator);
+			printf("%c", t->data.operator);
 			break;
 
 		case BRACKET:
-			printf("%c ", t->data.is_left_bracket ? '(' : ')');
+			printf("%c", t->data.is_left_bracket ? '(' : ')');
 			break;
 	}
 }
