@@ -3,7 +3,7 @@ CFLAGS = -g -std=c99 -Wno-unused-result -pipe -O3
 
 all:  main
 
-main: main.o
+main: main.o lexer.o
 	$(CC) $^ -o $@
 
 .c.o:
