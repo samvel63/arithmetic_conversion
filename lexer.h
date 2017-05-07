@@ -26,5 +26,6 @@ typedef struct {
 	} data;
 } Token;
 
+void token_next(Token *t);
 
 #endif // _LEXER_H_
