@@ -25,9 +25,9 @@ void token_next(Token *t)
 		ungetc(c, stdin);
 		scanf("%f", &result);
 
-		if (result == (int) result) {
+		if (result == (uint32_t) result) {
 			t->type = INTEGER;
-			t->data.value_int = (int) result;
+			t->data.value_int = (uint32_t) result;
 		} else {
 			t->type = FLOATING;
 			t->data.value_float = result;
@@ -38,7 +38,7 @@ void token_next(Token *t)
 		t->data.is_left_bracket = (c == '(');
 		can_be_unary = t->data.is_left_bracket;
 	} else if (can_be_unary && (c == '-' || c == '+')) {
-		int m = (c == '+') ? +1 : -1;
+		uint32_t m = (c == '+') ? +1 : -1;
 
 		do {
 			c = fgetc(stdin);
