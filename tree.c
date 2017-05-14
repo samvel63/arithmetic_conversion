@@ -62,7 +62,6 @@ Tree tree_create(Token *tokens, uint32_t idx_left, uint32_t idx_right)
 	}
 
 	if (tokens[op_pos].data.operator == '^') {
-        // Поэтому ищем самый левый оператор степени, связанный с текущим
         brackets = 0;
         for (uint32_t i = op_pos; i >= idx_left; --i) {
             if ((tokens[i].type == BRACKET) && !(tokens[i].data.is_left_bracket)) {
@@ -85,7 +84,7 @@ Tree tree_create(Token *tokens, uint32_t idx_left, uint32_t idx_right)
         }
     }
 
-    t->node  = tokens[op_pos]; // Запись оператора
+    t->node  = tokens[op_pos];
     t->left  = tree_create(tokens, idx_left, op_pos - 1);
     t->right = tree_create(tokens, op_pos + 1, idx_right);
     if (t->right == NULL) {
