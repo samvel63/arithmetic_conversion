@@ -1,57 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
+
 #include "lexer.h"
 #include "tree.h"
 #include "transform.h"
 
-Tree tree_cpy(Tree t) { 
-
-    if (!t)
-        return t;
-
-   Tree temp = (Tree)malloc(sizeof(struct _tree));
-
-    if (t->node.type == OPERATOR) {
-        temp->node.type = t->node.type;
-        temp->node.data.operator = t->node.data.operator;
-    } else if (t->node.type == INTEGER) {
-        temp->node.type = t->node.type;
-        temp->node.data.value_int = t->node.data.value_int;
-    } else if (t->node.type == VARIABLE) {
-        temp->node.type = t->node.type;
-        temp->node.data.variable = t->node.data.variable;
-    }   
-
-   temp->left = tree_cpy(t->left);   
-
-   temp->right = tree_cpy(t->right);  
-
-   return temp;
-}
-/*
-void tree_cpy(Tree t1, Tree t2)
-{
-	if (!t2) {
-		tree_destroy(&t1);
-		return;
-	}
-	if (!t1)
-	t1 = (Tree)malloc(sizeof(struct _tree));
-	printf("\n!!!!\n\n");
-	if (t2->node.type == OPERATOR) {
-		t1->node.type = t2->node.type;
-		t1->node.data.operator = t2->node.data.operator;
-	} else if (t2->node.type == INTEGER) {
-		t1->node.type = t2->node.type;
-		t1->node.data.value_int = t2->node.data.value_int;
-	} else if (t2->node.type == VARIABLE) {
-		t1->node.type = t2->node.type;
-		t1->node.data.variable = t2->node.data.variable;
-	}
-	tree_cpy(t1->left, t2->left);
-	tree_cpy(t1->right, t2->right);
-}
-*/
 void tree_simplify(Tree t)
 {
 	if (!t)
@@ -132,6 +85,9 @@ uint32_t find_variable_elem(Tree t, char c)
 		return 1;
 	}
 
+    if (t->node.type == OPERATOR && (t->node.data.operator == '+' || t->node.data.operator == '-'))
+        return find_variable_elem(t->left, c) && find_variable_elem(t->right, c);
+
 	if (!find_variable_elem(t->left, c))
 		return find_variable_elem(t->right, c);
 
@@ -149,10 +105,64 @@ uint32_t find_constant_elem(Tree t, uint32_t n)
 		return 1;
 	}
 
+    if (t->node.type == OPERATOR && (t->node.data.operator == '+' || t->node.data.operator == '-'))
+        return find_constant_elem(t->left, n) && find_constant_elem(t->right, n);
+
 	if (!find_constant_elem(t->left, n))
 		return find_constant_elem(t->right, n);
 
 	return 1;
+}
+
+uint32_t is_variable_in_tree(Tree t, char c)
+{
+    if (!t)
+        return 0;
+
+    if (t->node.data.variable == c) {
+        return 1;
+    }
+
+    if (t->node.type == OPERATOR && (t->node.data.operator == '+' || t->node.data.operator == '-'))
+        return is_variable_in_tree(t->left, c) && is_variable_in_tree(t->right, c);
+
+    if (!is_variable_in_tree(t->left, c))
+        return is_variable_in_tree(t->right, c);
+
+    return 1;
+}
+
+uint32_t is_constant_in_tree(Tree t, uint32_t n)
+{
+    if (!t)
+        return 0;
+
+    if (t->node.data.value_int == n) {
+        return 1;
+    }
+
+    if (t->node.type == OPERATOR && (t->node.data.operator == '+' || t->node.data.operator == '-'))
+        return is_constant_in_tree(t->left, n) && is_constant_in_tree(t->right, n);
+
+    if (!is_constant_in_tree(t->left, n))
+        return is_constant_in_tree(t->right, n);
+
+    return 1;
+}
+
+uint32_t is_common(Tree t1, Tree t2)
+{
+    if (!t1)
+        return;
+
+    if (t1->node.type == OPERATOR && t1->node.data.operator == '*')
+        return is_common(t1->left, t2) || is_common(t1->right, t2);
+    else if (t1->node.type == OPERATOR && (t1->node.data.operator == '-' || t1->node.data.operator == '+'))
+        return is_common(t1->left, t1->right) && is_common(t2->left, t2->right);
+    else if (t1->node.type == VARIABLE)
+        return is_variable_in_tree(t2, t1->node.data.variable);
+    else if (t1->node.type == INTEGER)
+        return is_constant_in_tree(t2, t1->node.data.value_int);
 }
 
 void transform(Tree t1, Tree t2)
@@ -160,17 +170,24 @@ void transform(Tree t1, Tree t2)
 	if (!t1)
 		return;
 
-    if (t1->node.type == OPERATOR) {
+    if (t1->node.type == OPERATOR && t1->node.data.operator == '*') {
     	transform(t1->left, t2);
     	transform(t1->right, t2);
     	return;
+    } else if (t1->node.type == OPERATOR && (t1->node.data.operator == '-' || t1->node.data.operator == '+')) {
+        if (is_common(t1->left, t1->right) && is_common(t2->left, t2->right) && is_common(t1->left, t2->right) && is_common(t2->left, t1->right)) {
+            transform(t1->left, t1->right);
+            transform(t2->left, t2->right);   
+        }
     } else if (t1->node.type == VARIABLE) {
-    	if(find_variable_elem(t2, t1->node.data.variable)) {
+    	if(is_variable_in_tree(t2, t1->node.data.variable)) {
+            find_variable_elem(t2, t1->node.data.variable);
     		t1->node.type = INTEGER;
     		t1->node.data.value_int = 1;
     	}
     } else if (t1->node.type == INTEGER) {
-    	if (find_constant_elem(t2, t1->node.data.value_int)) {
+    	if (is_constant_in_tree(t2, t1->node.data.value_int)) {
+            find_constant_elem(t2, t1->node.data.value_int);
     		t1->node.type = INTEGER;
     		t1->node.data.value_int = 1;
     	}
