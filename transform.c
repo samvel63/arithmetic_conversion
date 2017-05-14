@@ -4,7 +4,54 @@
 #include "tree.h"
 #include "transform.h"
 
+Tree tree_cpy(Tree t) { 
 
+    if (!t)
+        return t;
+
+   Tree temp = (Tree)malloc(sizeof(struct _tree));
+
+    if (t->node.type == OPERATOR) {
+        temp->node.type = t->node.type;
+        temp->node.data.operator = t->node.data.operator;
+    } else if (t->node.type == INTEGER) {
+        temp->node.type = t->node.type;
+        temp->node.data.value_int = t->node.data.value_int;
+    } else if (t->node.type == VARIABLE) {
+        temp->node.type = t->node.type;
+        temp->node.data.variable = t->node.data.variable;
+    }   
+
+   temp->left = tree_cpy(t->left);   
+
+   temp->right = tree_cpy(t->right);  
+
+   return temp;
+}
+/*
+void tree_cpy(Tree t1, Tree t2)
+{
+	if (!t2) {
+		tree_destroy(&t1);
+		return;
+	}
+	if (!t1)
+	t1 = (Tree)malloc(sizeof(struct _tree));
+	printf("\n!!!!\n\n");
+	if (t2->node.type == OPERATOR) {
+		t1->node.type = t2->node.type;
+		t1->node.data.operator = t2->node.data.operator;
+	} else if (t2->node.type == INTEGER) {
+		t1->node.type = t2->node.type;
+		t1->node.data.value_int = t2->node.data.value_int;
+	} else if (t2->node.type == VARIABLE) {
+		t1->node.type = t2->node.type;
+		t1->node.data.variable = t2->node.data.variable;
+	}
+	tree_cpy(t1->left, t2->left);
+	tree_cpy(t1->right, t2->right);
+}
+*/
 void tree_simplify(Tree t)
 {
 	if (!t)
@@ -13,31 +60,60 @@ void tree_simplify(Tree t)
 	tree_simplify(t->left);
 	tree_simplify(t->right);
 
+	if (t->node.type == OPERATOR && t->node.data.operator == '/') {
+		if (t->right->node.type == INTEGER) {
+			if (t->right->node.data.value_int == 1) {
+				t->node.type = t->left->node.type;
+				t->node.data.value_int = t->left->node.data.value_int;
+				tree_destroy(&t->right);
+				tree_destroy(&t->left);
+			}
+		}
+	}
+
+
 	if (t->node.type == OPERATOR && t->node.data.operator == '*') {
 		if (t->left->node.type == INTEGER) {
 			if (t->left->node.data.value_int == 1) {
-				printf("\nkek\n\n");
 				if (t->right->node.type == INTEGER) {
 					t->node.type = INTEGER;
 					t->node.data.value_int = t->right->node.data.value_int;
+					tree_destroy(&t->right);
+                    tree_destroy(&t->left);
 				} else if (t->right->node.type == VARIABLE) {
 					t->node.type = VARIABLE;
 					t->node.data.variable = t->right->node.data.variable;
+					tree_destroy(&t->right);
+                    tree_destroy(&t->left);
+				} else if (t->right->node.type == OPERATOR) {
+                    t->node.data.operator = t->right->node.data.operator;
+                    Tree tmp_1 = t->right->right;
+                    Tree tmp_2 = t->right->left;
+                    t->left = NULL;
+                    t->left = tmp_1;
+                    t->right = tmp_2;
 				}
-				tree_destroy(&t->right);
-				tree_destroy(&t->left);
 			}
 		} else if (t->right->node.type == INTEGER) {
 			if (t->right->node.data.value_int == 1) {
 				if (t->left->node.type == INTEGER) {
 					t->node.type = INTEGER;
+					tree_destroy(&t->left);
+                    tree_destroy(&t->right);
 					t->node.data.value_int = t->left->node.data.value_int;
 				} else if (t->left->node.type == VARIABLE) {
 					t->node.type = VARIABLE;
 					t->node.data.variable = t->left->node.data.variable;
+					tree_destroy(&t->left);
+                    tree_destroy(&t->right);
+				} else if (t->left->node.type == OPERATOR) {
+                    t->node.data.operator = t->left->node.data.operator;
+                    Tree tmp_1 = t->left->right;
+                    Tree tmp_2 = t->left->left;
+                    t->right = NULL;
+                    t->right = tmp_1;
+                    t->left = tmp_2;
 				}
-				tree_destroy(&t->right);
-				tree_destroy(&t->left);
 			}
 
 		}
