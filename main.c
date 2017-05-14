@@ -28,8 +28,9 @@ uint32_t main(void)
 	tree_print(tree, 0);
 	printf("\n\n");
     find_det(tree);
+    tree_simplify(tree);
     tree_print(tree, 0);
-	    printf("\n\n");
+    printf("\n\n");
 	tree_infix(tree);
 	printf("\n\n");
 	tree_destroy(&tree);

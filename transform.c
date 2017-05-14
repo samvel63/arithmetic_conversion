@@ -4,11 +4,45 @@
 #include "tree.h"
 #include "transform.h"
 
+
 void tree_simplify(Tree t)
 {
 	if (!t)
 		return;
-	
+
+	tree_simplify(t->left);
+	tree_simplify(t->right);
+
+	if (t->node.type == OPERATOR && t->node.data.operator == '*') {
+		if (t->left->node.type == INTEGER) {
+			if (t->left->node.data.value_int == 1) {
+				printf("\nkek\n\n");
+				if (t->right->node.type == INTEGER) {
+					t->node.type = INTEGER;
+					t->node.data.value_int = t->right->node.data.value_int;
+				} else if (t->right->node.type == VARIABLE) {
+					t->node.type = VARIABLE;
+					t->node.data.variable = t->right->node.data.variable;
+				}
+				tree_destroy(&t->right);
+				tree_destroy(&t->left);
+			}
+		} else if (t->right->node.type == INTEGER) {
+			if (t->right->node.data.value_int == 1) {
+				if (t->left->node.type == INTEGER) {
+					t->node.type = INTEGER;
+					t->node.data.value_int = t->left->node.data.value_int;
+				} else if (t->left->node.type == VARIABLE) {
+					t->node.type = VARIABLE;
+					t->node.data.variable = t->left->node.data.variable;
+				}
+				tree_destroy(&t->right);
+				tree_destroy(&t->left);
+			}
+
+		}
+	}
+
 }
 
 uint32_t find_variable_elem(Tree t, char c)
@@ -55,7 +89,6 @@ void transform(Tree t1, Tree t2)
     	transform(t1->right, t2);
     	return;
     } else if (t1->node.type == VARIABLE) {
-    	printf("\nkek\n\n");
     	if(find_variable_elem(t2, t1->node.data.variable)) {
     		t1->node.type = INTEGER;
     		t1->node.data.value_int = 1;

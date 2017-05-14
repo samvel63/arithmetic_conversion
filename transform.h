@@ -3,5 +3,7 @@
 
 void find_det(Tree tree);
 void transform(Tree t1, Tree t2);
+void tree_simplify(Tree t);
+
 
 #endif
