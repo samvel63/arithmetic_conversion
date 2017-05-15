@@ -5,6 +5,20 @@
 #include "tree.h"
 #include "transform.h"
 
+uint32_t trees_is_equal(Tree t1, Tree t2)
+{
+    if (!t1 && !t2)
+        return 1;
+
+    if (!t1 || !t2)
+        return 0;
+
+    return ((t1->node.type == INTEGER && t1->node.type == t2->node.type && t1->node.data.value_int == t2->node.data.value_int) ||
+           (t1->node.type == VARIABLE && t1->node.type == t2->node.type && t1->node.data.variable == t2->node.data.variable)  ||
+           (t1->node.type == OPERATOR && t1->node.type == t2->node.type && t1->node.data.operator == t2->node.data.operator)) &&
+           ((trees_is_equal(t1->right, t2->right) && trees_is_equal(t1->left, t2->left)) || (trees_is_equal(t1->left, t2->right) && trees_is_equal(t1->right, t2->left)));
+}
+
 void tree_simplify(Tree t)
 {
 	if (!t)
@@ -158,7 +172,7 @@ uint32_t is_common(Tree t1, Tree t2)
     if (t1->node.type == OPERATOR && t1->node.data.operator == '*')
         return is_common(t1->left, t2) || is_common(t1->right, t2);
     else if (t1->node.type == OPERATOR && (t1->node.data.operator == '-' || t1->node.data.operator == '+'))
-        return is_common(t1->left, t1->right) && is_common(t2->left, t2->right);
+        return is_common(t1->left, t2) && is_common(t1->right, t2);
     else if (t1->node.type == VARIABLE)
         return is_variable_in_tree(t2, t1->node.data.variable);
     else if (t1->node.type == INTEGER)
@@ -171,26 +185,75 @@ void transform(Tree t1, Tree t2)
 		return;
 
     if (t1->node.type == OPERATOR && t1->node.data.operator == '*') {
-    	transform(t1->left, t2);
-    	transform(t1->right, t2);
-    	return;
-    } else if (t1->node.type == OPERATOR && (t1->node.data.operator == '-' || t1->node.data.operator == '+')) {
-        if (is_common(t1->left, t1->right) && is_common(t2->left, t2->right) && is_common(t1->left, t2->right) && is_common(t2->left, t1->right)) {
-            transform(t1->left, t1->right);
-            transform(t2->left, t2->right);   
+        if (is_common(t1->left, t2)) {
+            transform(t1->left, t2);
+            return;
+        } if (is_common(t1->right, t2)) {
+            transform(t1->right, t2);
+            return;
         }
-    } else if (t1->node.type == VARIABLE) {
-    	if(is_variable_in_tree(t2, t1->node.data.variable)) {
+
+    }
+
+    if (t2->node.type == OPERATOR && t2->node.data.operator == '*') {
+        /*if (is_common(t2, t1)) {
+            transform(t2->left, t1);
+            transform(t2->right, t1);
+            return;
+        }*/
+
+        if (is_common(t2->left, t1)) {
+            transform(t2->left, t1);
+            return;
+        } if (is_common(t2->right, t1)) {
+            transform(t2->right, t1);
+            return;
+        }
+    }
+
+
+    if (t1->node.type == VARIABLE) {
+        if(is_variable_in_tree(t2, t1->node.data.variable)) {
             find_variable_elem(t2, t1->node.data.variable);
-    		t1->node.type = INTEGER;
-    		t1->node.data.value_int = 1;
-    	}
-    } else if (t1->node.type == INTEGER) {
-    	if (is_constant_in_tree(t2, t1->node.data.value_int)) {
+            t1->node.type = INTEGER;
+            t1->node.data.value_int = 1;
+            return;
+        }
+    }
+
+    if (t2->node.type == VARIABLE) {
+        if(is_variable_in_tree(t1, t2->node.data.variable)) {
+            find_variable_elem(t1, t2->node.data.variable);
+            t2->node.type = INTEGER;
+            t2->node.data.value_int = 1;
+            return;
+        }
+    }
+
+    if (t1->node.type == INTEGER) {
+        if (is_constant_in_tree(t2, t1->node.data.value_int)) {
             find_constant_elem(t2, t1->node.data.value_int);
-    		t1->node.type = INTEGER;
-    		t1->node.data.value_int = 1;
-    	}
+            t1->node.type = INTEGER;
+            t1->node.data.value_int = 1;
+            return;
+        }
+    }
+
+    if (t2->node.type == INTEGER) {
+        if (is_constant_in_tree(t1, t2->node.data.value_int)) {
+            find_constant_elem(t1, t2->node.data.value_int);
+            t2->node.type = INTEGER;
+            t2->node.data.value_int = 1;
+            return;
+        }
+    }
+
+    if (t1->node.type == OPERATOR && (t1->node.data.operator == '-' || t1->node.data.operator == '+')) {
+        if (is_common(t1->left, t2) && is_common(t1->right, t2)) {
+            transform(t1->left, t1->right);
+            transform(t2->left, t2->right);
+            return;   
+        }
     }
 
 }
@@ -202,6 +265,13 @@ void find_det(Tree tree)
     find_det(tree->left);
     find_det(tree->right);
     if (tree->node.type == OPERATOR && tree->node.data.operator == '/') {
+        if (trees_is_equal(tree->left, tree->right)) {
+            tree->node.type = INTEGER;
+            tree->node.data.value_int = 1;
+            tree_destroy(&tree->left);
+            tree_destroy(&tree->right);
+            return;
+        }
         transform(tree->left, tree->right);
     }
 }
