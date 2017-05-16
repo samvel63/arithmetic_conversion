@@ -31,6 +31,29 @@ void tree_simplify(Tree t)
 	tree_simplify(t->right);
 
 	if (t->node.type == OPERATOR && t->node.data.operator == '/') {
+        if (t->left->node.type == INTEGER) {
+            if (t->left->node.data.value_int == 1 && t->right->node.type == OPERATOR && t->right->node.data.operator == '/') {
+                Tree tmp_2 = t->right->left;
+                Tree tmp_1 = t->right->right;
+                tree_destroy(&t->left);
+                free(t->right);
+                t->left = tmp_1;
+                t->right = tmp_2;
+            }
+        }
+
+        if (t->right->node.type == INTEGER) {
+            if (t->right->node.data.value_int == 1 && t->left->node.type == OPERATOR && t->left->node.data.operator == '/') {
+                Tree tmp_2 = t->left->left;
+                Tree tmp_1 = t->left->right;
+                tree_destroy(&t->right);
+                free(t->left);
+                t->left = tmp_2;
+                t->right = tmp_1;
+            }
+        }
+
+
 		if (t->right->node.type == INTEGER) {
 			if (t->right->node.data.value_int == 1) {
 				t->node.type = t->left->node.type;
@@ -39,8 +62,8 @@ void tree_simplify(Tree t)
                 Tree tmp_2 = t->left->left;
 				tree_destroy(&t->right);
 				free(t->left);
-                t->right = tmp_1;
-                t->left = tmp_2;
+                t->right = tmp_2;
+                t->left = tmp_1;
 			}
 		}
 	}
@@ -245,6 +268,18 @@ void transform(Tree t1, Tree t2)
 
         if (is_common(t1->left, t2->left))
             transform(t1->left, t2->left);
+        return;
+    }
+
+    if (t1->node.type == OPERATOR && t1->node.data.operator == '/') {
+        if (is_common(t1->left, t2))
+            transform(t1->left, t2);
+        return;
+    }
+
+    if (t2->node.type == OPERATOR && t2->node.data.operator == '/') {
+        if (is_common(t2->left, t1))
+            transform(t2->left, t1);
         return;
     }
 
