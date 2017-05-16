@@ -239,6 +239,15 @@ void transform(Tree t1, Tree t2)
         }
     }
 
+    if (t1->node.type == OPERATOR && t1->node.data.operator == '/' && t1->node.type == t2->node.type) {
+        if (is_common(t1->right, t2->right))
+            transform(t1->right, t2->right);
+
+        if (is_common(t1->left, t2->left))
+            transform(t1->left, t2->left);
+        return;
+    }
+
     if (t1->node.type == OPERATOR && t1->node.data.operator == '*') {
         if (is_common(t1->left, t2))
             transform(t1->left, t2);
@@ -258,7 +267,7 @@ void transform(Tree t1, Tree t2)
 
         return;
     }
-    
+
     if (t1->node.type == OPERATOR && (t1->node.data.operator == '-' || t1->node.data.operator == '+')) {
         if (is_common(t1->left, t2) && is_common(t1->right, t2)) {
             transform(t1->left, t1->right);
