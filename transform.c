@@ -208,7 +208,7 @@ uint32_t is_constant_in_tree(Tree t, uint32_t n)
 uint32_t is_common(Tree t1, Tree t2)
 {
     if (!t1)
-        return;
+        return 0;
 
     if (t1->node.type == OPERATOR && t1->node.data.operator == '*')
         return is_common(t1->left, t2) || is_common(t1->right, t2);

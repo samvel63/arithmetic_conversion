@@ -18,6 +18,9 @@ uint32_t main(void)
 		token_next(&token);
 	}
 
+	if (token_cap == 0)
+		exit(0);
+
 	printf("\n\nВыражение в линейном представлении:\n");
 	for (uint32_t i = 0; i < token_cap; ++i)
 		token_print(&tokens[i]);
