@@ -58,10 +58,12 @@ void token_next(Token *t)
 			t->data.operator = '-';
 			can_be_unary = true;
 		}
-	} else {
+	} else if (c == '-' || c == '+' || c == '/' || c == '*' || c == '^') {
 		t->type = OPERATOR;
 		t->data.operator = c;
 		can_be_unary = true;
+	} else {
+		exit(1);
 	}
 }
 
