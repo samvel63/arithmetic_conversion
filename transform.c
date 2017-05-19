@@ -18,7 +18,8 @@ uint32_t trees_is_equal(Tree t1, Tree t2)
     if (t1->node.type == OPERATOR && t1->node.type == t2->node.type && (t1->node.data.operator == '/' || t1->node.data.operator == '-'))
         return  t1->node.data.operator == t2->node.data.operator && trees_is_equal(t1->right, t2->right) && trees_is_equal(t1->left, t2->left);
 
-    return ((t1->node.type == INTEGER && t1->node.type == t2->node.type && t1->node.data.value_int == t2->node.data.value_int) ||
+    return ((t1->node.type == FLOATING && t1->node.type == t2->node.type && t1->node.data.value_float == t2->node.data.value_float) ||
+           (t1->node.type == INTEGER && t1->node.type == t2->node.type && t1->node.data.value_int == t2->node.data.value_int) ||
            (t1->node.type == VARIABLE && t1->node.type == t2->node.type && !strcmp(t1->node.data.variable.cstring ,t2->node.data.variable.cstring))  ||
            (t1->node.type == OPERATOR && t1->node.type == t2->node.type && t1->node.data.operator == t2->node.data.operator)) &&
            ((trees_is_equal(t1->right, t2->right) && trees_is_equal(t1->left, t2->left)) || (trees_is_equal(t1->left, t2->right) && trees_is_equal(t1->right, t2->left)));
@@ -165,7 +166,7 @@ uint32_t is_variable_in_tree(Tree t, String s)
     return 1;
 }
 
-uint32_t find_constant_elem(Tree t, uint32_t n)
+uint32_t find_int_elem(Tree t, uint32_t n)
 {
 	if (!t)
 		return 0;
@@ -177,31 +178,65 @@ uint32_t find_constant_elem(Tree t, uint32_t n)
 	}
 
     if (t->node.type == OPERATOR && (t->node.data.operator == '+' || t->node.data.operator == '-'))
-        return find_constant_elem(t->left, n) && find_constant_elem(t->right, n);
+        return find_int_elem(t->left, n) && find_int_elem(t->right, n);
 
-	if (!find_constant_elem(t->left, n))
-		return find_constant_elem(t->right, n);
+	if (!find_int_elem(t->left, n))
+		return find_int_elem(t->right, n);
 
 	return 1;
 }
 
-uint32_t is_constant_in_tree(Tree t, uint32_t n)
+uint32_t is_int_in_tree(Tree t, uint32_t n)
 {
     if (!t)
         return 0;
-
-
-
 
     if (t->node.data.value_int == n) {
         return 1;
     }
 
     if (t->node.type == OPERATOR && (t->node.data.operator == '+' || t->node.data.operator == '-'))
-        return is_constant_in_tree(t->left, n) && is_constant_in_tree(t->right, n);
+        return is_int_in_tree(t->left, n) && is_int_in_tree(t->right, n);
 
-    if (!is_constant_in_tree(t->left, n))
-        return is_constant_in_tree(t->right, n);
+    if (!is_int_in_tree(t->left, n))
+        return is_int_in_tree(t->right, n);
+
+    return 1;
+}
+
+uint32_t find_float_elem(Tree t, float n)
+{
+    if (!t)
+        return 0;
+
+    if (t->node.data.value_float == n) {
+        t->node.type = INTEGER;
+        t->node.data.value_int = 1;
+        return 1;
+    }
+
+    if (t->node.type == OPERATOR && (t->node.data.operator == '+' || t->node.data.operator == '-'))
+        return find_float_elem(t->left, n) && find_float_elem(t->right, n);
+
+    if (!find_float_elem(t->left, n))
+        return find_float_elem(t->right, n);
+
+    return 1;
+}
+
+uint32_t is_float_in_tree(Tree t, float n)
+{
+    if (!t)
+        return 0;
+
+    if (t->node.data.value_float == n)
+        return 1;
+
+    if (t->node.type == OPERATOR && (t->node.data.operator == '+' || t->node.data.operator == '-'))
+        return is_float_in_tree(t->left, n) && is_float_in_tree(t->right, n);
+
+    if (!is_float_in_tree(t->left, n))
+        return is_float_in_tree(t->right, n);
 
     return 1;
 }
@@ -218,7 +253,9 @@ uint32_t is_common(Tree t1, Tree t2)
     else if (t1->node.type == VARIABLE)
         return is_variable_in_tree(t2, t1->node.data.variable);
     else if (t1->node.type == INTEGER)
-        return is_constant_in_tree(t2, t1->node.data.value_int);
+        return is_int_in_tree(t2, t1->node.data.value_int);
+    else if (t1->node.type == FLOATING)
+        return is_float_in_tree(t2, t1->node.data.value_float);
 }
 
 void transform(Tree t1, Tree t2)
@@ -246,8 +283,8 @@ void transform(Tree t1, Tree t2)
     }
 
     if (t1->node.type == INTEGER) {
-        if (is_constant_in_tree(t2, t1->node.data.value_int)) {
-            find_constant_elem(t2, t1->node.data.value_int);
+        if (is_int_in_tree(t2, t1->node.data.value_int)) {
+            find_int_elem(t2, t1->node.data.value_int);
             t1->node.type = INTEGER;
             t1->node.data.value_int = 1;
             return;
@@ -255,8 +292,26 @@ void transform(Tree t1, Tree t2)
     }
 
     if (t2->node.type == INTEGER) {
-        if (is_constant_in_tree(t1, t2->node.data.value_int)) {
-            find_constant_elem(t1, t2->node.data.value_int);
+        if (is_int_in_tree(t1, t2->node.data.value_int)) {
+            find_int_elem(t1, t2->node.data.value_int);
+            t2->node.type = INTEGER;
+            t2->node.data.value_int = 1;
+            return;
+        }
+    }
+
+    if (t1->node.type == FLOATING) {
+        if (is_float_in_tree(t2, t1->node.data.value_float)) {
+            find_float_elem(t2, t1->node.data.value_float);
+            t1->node.type = INTEGER;
+            t1->node.data.value_int = 1;
+            return;
+        }
+    }
+
+    if (t2->node.type == FLOATING) {
+        if (is_float_in_tree(t1, t2->node.data.value_float)) {
+            find_float_elem(t1, t2->node.data.value_float);
             t2->node.type = INTEGER;
             t2->node.data.value_int = 1;
             return;
