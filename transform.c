@@ -4,6 +4,7 @@
 #include "lexer.h"
 #include "tree.h"
 #include "transform.h"
+#include "mystring.h"
 
 uint32_t trees_is_equal(Tree t1, Tree t2)
 {

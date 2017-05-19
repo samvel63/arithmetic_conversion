@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <ctype.h>
+#include <string.h>
 
 #include "lexer.h"
 
@@ -18,8 +19,10 @@ void token_next(Token *t)
 		t->type = FINAL;
 	} else if (isalpha(c)) {
 		t->type = VARIABLE;
+		memset(t->data.variable.cstring, '\0', STRING_SIZE);
+		t->data.variable.length = 0;
 		while (isalpha(c)) {
-			if(string_append(t->data.variable, c)) {
+			if(string_append(&t->data.variable, c)) {
 				fprintf(stderr, "\n\nSTRING NO MEMORY\n\n");
 				exit(3);
 			}
@@ -46,7 +49,6 @@ void token_next(Token *t)
 		can_be_unary = t->data.is_left_bracket;
 	} else if (can_be_unary && (c == '-' || c == '+')) {
 		uint32_t m = (c == '+') ? +1 : -1;
-
 		do {
 			c = fgetc(stdin);
 		} while (isspace(c));

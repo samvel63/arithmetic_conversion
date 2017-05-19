@@ -1,6 +1,7 @@
 #ifndef __MYSTRING_H__
 #define __MYSTRING_H__
 
+#include <inttypes.h>
 #include <stdlib.h>
 
 #define STRING_NO_MEMORY -1

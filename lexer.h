@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include <inttypes.h>
 
+#include "mystring.h"
+
 #define TOKEN_SIZE 256
 
 typedef enum {
