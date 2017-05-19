@@ -3,7 +3,7 @@
 
 #include "lexer.h"
 #include "tree.h"
-//#include "transform.h"
+#include "transform.h"
 #include "mystring.h"
 
 uint32_t main(void)
@@ -33,16 +33,16 @@ uint32_t main(void)
 	tree_print(tree, 0);
 	printf("\n\n");
 
-/*
+
 	printf("\n\nДерево выражения после преобразования:\n");
     find_det(tree);
     tree_simplify(tree);
     tree_print(tree, 0);
 
 	printf("\n\nВыражение в линейном представлении после преобразования:\n");
-	tree_infix(tree);*
+	tree_infix(tree);
 	printf("\n\n");
-	tree_destroy(&tree);*/
+	tree_destroy(&tree);
 	printf("\n\n");
 	return 0;
 }

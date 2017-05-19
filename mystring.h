@@ -15,5 +15,6 @@ typedef struct {
 
 uint32_t string_copy(String *to, String *from);
 uint32_t string_append(String *string, char c);
+uint32_t string_cmp(String  *one, String *two);
 
 #endif // __MYSTRING_H__

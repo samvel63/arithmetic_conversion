@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "lexer.h"
 #include "tree.h"
@@ -18,7 +19,7 @@ uint32_t trees_is_equal(Tree t1, Tree t2)
         return  t1->node.data.operator == t2->node.data.operator && trees_is_equal(t1->right, t2->right) && trees_is_equal(t1->left, t2->left);
 
     return ((t1->node.type == INTEGER && t1->node.type == t2->node.type && t1->node.data.value_int == t2->node.data.value_int) ||
-           (t1->node.type == VARIABLE && t1->node.type == t2->node.type && t1->node.data.variable == t2->node.data.variable)  ||
+           (t1->node.type == VARIABLE && t1->node.type == t2->node.type && !strcmp(t1->node.data.variable.cstring ,t2->node.data.variable.cstring))  ||
            (t1->node.type == OPERATOR && t1->node.type == t2->node.type && t1->node.data.operator == t2->node.data.operator)) &&
            ((trees_is_equal(t1->right, t2->right) && trees_is_equal(t1->left, t2->left)) || (trees_is_equal(t1->left, t2->right) && trees_is_equal(t1->right, t2->left)));
 }
@@ -127,24 +128,41 @@ void tree_simplify(Tree t)
 
 }
 
-uint32_t find_variable_elem(Tree t, char c)
+uint32_t find_variable_elem(Tree t, String s)
 {
 	if (!t)
 		return 0;
 
-	if (t->node.data.variable == c) {
+	if (string_cmp(&t->node.data.variable, &s)) {
 		t->node.type = INTEGER;
 		t->node.data.value_int = 1;
 		return 1;
 	}
 
     if (t->node.type == OPERATOR && (t->node.data.operator == '+' || t->node.data.operator == '-'))
-        return find_variable_elem(t->left, c) && find_variable_elem(t->right, c);
+        return find_variable_elem(t->left, s) && find_variable_elem(t->right, s);
 
-	if (!find_variable_elem(t->left, c))
-		return find_variable_elem(t->right, c);
+	if (!find_variable_elem(t->left, s))
+		return find_variable_elem(t->right, s);
 
 	return 1;
+}
+
+uint32_t is_variable_in_tree(Tree t, String s)
+{
+    if (!t)
+        return 0;
+
+    if (string_cmp(&t->node.data.variable, &s))
+        return 1;
+
+    if (t->node.type == OPERATOR && (t->node.data.operator == '+' || t->node.data.operator == '-'))
+        return is_variable_in_tree(t->left, s) && is_variable_in_tree(t->right, s);
+
+    if (!is_variable_in_tree(t->left, s))
+        return is_variable_in_tree(t->right, s);
+
+    return 1;
 }
 
 uint32_t find_constant_elem(Tree t, uint32_t n)
@@ -165,24 +183,6 @@ uint32_t find_constant_elem(Tree t, uint32_t n)
 		return find_constant_elem(t->right, n);
 
 	return 1;
-}
-
-uint32_t is_variable_in_tree(Tree t, char c)
-{
-    if (!t)
-        return 0;
-
-    if (t->node.data.variable == c) {
-        return 1;
-    }
-
-    if (t->node.type == OPERATOR && (t->node.data.operator == '+' || t->node.data.operator == '-'))
-        return is_variable_in_tree(t->left, c) && is_variable_in_tree(t->right, c);
-
-    if (!is_variable_in_tree(t->left, c))
-        return is_variable_in_tree(t->right, c);
-
-    return 1;
 }
 
 uint32_t is_constant_in_tree(Tree t, uint32_t n)

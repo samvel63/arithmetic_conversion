@@ -18,3 +18,11 @@ uint32_t string_append(String *string, char c)
         string->cstring[string->length++] = c;
     return STRING_SUCCESS;
 }
+
+uint32_t string_cmp(String  *one, String *two)
+{
+	if (one->length != two->length)
+		return 0;
+	else
+		return !strcmp(one->cstring, two->cstring);
+}
