@@ -3,7 +3,8 @@
 
 #include "lexer.h"
 #include "tree.h"
-#include "transform.h"
+//#include "transform.h"
+#include "mystring.h"
 
 uint32_t main(void)
 {
@@ -22,8 +23,9 @@ uint32_t main(void)
 		exit(0);
 
 	printf("\n\nВыражение в линейном представлении:\n");
-	for (uint32_t i = 0; i < token_cap; ++i)
+	for (uint32_t i = 0; i < token_cap; ++i) {
 		token_print(&tokens[i]);
+	}
 
 	printf("\n\nДерево выражения до преобразования:\n");
 	Tree tree;
@@ -31,16 +33,16 @@ uint32_t main(void)
 	tree_print(tree, 0);
 	printf("\n\n");
 
-
+/*
 	printf("\n\nДерево выражения после преобразования:\n");
     find_det(tree);
     tree_simplify(tree);
     tree_print(tree, 0);
 
 	printf("\n\nВыражение в линейном представлении после преобразования:\n");
-	tree_infix(tree);
+	tree_infix(tree);*
 	printf("\n\n");
-	tree_destroy(&tree);
-
+	tree_destroy(&tree);*/
+	printf("\n\n");
 	return 0;
 }
