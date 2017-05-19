@@ -20,7 +20,7 @@ typedef struct {
 	union {
 		uint32_t 	value_int;
 		float		value_float;
-		char		variable;
+		String		variable;
 		bool 		is_left_bracket;
 		char 		operator;
 	} data;
