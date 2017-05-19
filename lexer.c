@@ -18,7 +18,14 @@ void token_next(Token *t)
 		t->type = FINAL;
 	} else if (isalpha(c)) {
 		t->type = VARIABLE;
-		t->data.variable = c;
+		while (isalpha(c)) {
+			if(string_append(t->data.variable, c)) {
+				fprintf(stderr, "\n\nSTRING NO MEMORY\n\n");
+				exit(3);
+			}
+			c = fgetc(stdin);
+		}
+		ungetc(c, stdin);
 		can_be_unary = false;
 	} else if (isdigit(c)) {
 		float result;
@@ -83,7 +90,7 @@ void token_print(Token *t)
 			break;
 
 		case VARIABLE:
-			printf("%c", t->data.variable);
+			printf("%s", t->data.variable.cstring);
 			break;
 
 		case OPERATOR:
