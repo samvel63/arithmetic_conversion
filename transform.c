@@ -86,7 +86,6 @@ void tree_simplify(Tree t)
 					tree_destroy(&t->right);
                     tree_destroy(&t->left);
 				} else if (t->right->node.type == OPERATOR) {
-                   // t->node.data.operator = t->right->node.data.operator;
                     char operator = t->right->node.data.operator;
                     Tree tmp_1 = t->right->right;
                     Tree tmp_2 = t->right->left;
@@ -166,77 +165,42 @@ uint32_t is_variable_in_tree(Tree t, String s)
     return 1;
 }
 
-uint32_t find_int_elem(Tree t, uint32_t n)
-{
-	if (!t)
-		return 0;
 
-	if (t->node.data.value_int == n) {
-		t->node.type = INTEGER;
-		t->node.data.value_int = 1;
-		return 1;
-	}
-
-    if (t->node.type == OPERATOR && (t->node.data.operator == '+' || t->node.data.operator == '-'))
-        return find_int_elem(t->left, n) && find_int_elem(t->right, n);
-
-	if (!find_int_elem(t->left, n))
-		return find_int_elem(t->right, n);
-
-	return 1;
-}
-
-uint32_t is_int_in_tree(Tree t, uint32_t n)
+uint32_t find_constant_elem(Tree t, float n)
 {
     if (!t)
         return 0;
 
-    if (t->node.data.value_int == n) {
+    if (t->node.type == FLOATING) {
+        t->node.data.value_float /= n;
         return 1;
+    } else if (t->node.type == INTEGER) {
+        t->node.type = FLOATING;
+        t->node.data.value_float = t->node.data.value_int / n;
     }
 
     if (t->node.type == OPERATOR && (t->node.data.operator == '+' || t->node.data.operator == '-'))
-        return is_int_in_tree(t->left, n) && is_int_in_tree(t->right, n);
+        return find_constant_elem(t->left, n) && find_constant_elem(t->right, n);
 
-    if (!is_int_in_tree(t->left, n))
-        return is_int_in_tree(t->right, n);
+    if (!find_constant_elem(t->left, n))
+        return find_constant_elem(t->right, n);
 
     return 1;
 }
 
-uint32_t find_float_elem(Tree t, float n)
+uint32_t is_constant_in_tree(Tree t, float n)
 {
     if (!t)
         return 0;
 
-    if (t->node.data.value_float == n) {
-        t->node.type = INTEGER;
-        t->node.data.value_int = 1;
-        return 1;
-    }
-
-    if (t->node.type == OPERATOR && (t->node.data.operator == '+' || t->node.data.operator == '-'))
-        return find_float_elem(t->left, n) && find_float_elem(t->right, n);
-
-    if (!find_float_elem(t->left, n))
-        return find_float_elem(t->right, n);
-
-    return 1;
-}
-
-uint32_t is_float_in_tree(Tree t, float n)
-{
-    if (!t)
-        return 0;
-
-    if (t->node.data.value_float == n)
+    if (t->node.type == FLOATING || t->node.type == INTEGER)
         return 1;
 
     if (t->node.type == OPERATOR && (t->node.data.operator == '+' || t->node.data.operator == '-'))
-        return is_float_in_tree(t->left, n) && is_float_in_tree(t->right, n);
+        return is_constant_in_tree(t->left, n) && is_constant_in_tree(t->right, n);
 
-    if (!is_float_in_tree(t->left, n))
-        return is_float_in_tree(t->right, n);
+    if (!is_constant_in_tree(t->left, n))
+        return is_constant_in_tree(t->right, n);
 
     return 1;
 }
@@ -248,21 +212,19 @@ uint32_t is_common(Tree t1, Tree t2)
 
     if (t1->node.type == OPERATOR && t1->node.data.operator == '*')
         return is_common(t1->left, t2) || is_common(t1->right, t2);
-    else if (t1->node.type == OPERATOR && (t1->node.data.operator == '-' || t1->node.data.operator == '+'))
-        return is_common(t1->left, t2) && is_common(t1->right, t2);
     else if (t1->node.type == VARIABLE)
         return is_variable_in_tree(t2, t1->node.data.variable);
     else if (t1->node.type == INTEGER)
-        return is_int_in_tree(t2, t1->node.data.value_int);
+        return is_constant_in_tree(t2, t1->node.data.value_int);
     else if (t1->node.type == FLOATING)
-        return is_float_in_tree(t2, t1->node.data.value_float);
+        return is_constant_in_tree(t2, t1->node.data.value_float);
+    else if (t1->node.type == OPERATOR && t1->node.data.operator == '^')
+        return 0;
 }
-
 void transform(Tree t1, Tree t2)
 {
 	if (!t1)
 		return;
-
 
     if (t1->node.type == VARIABLE) {
         if(is_variable_in_tree(t2, t1->node.data.variable)) {
@@ -283,8 +245,8 @@ void transform(Tree t1, Tree t2)
     }
 
     if (t1->node.type == INTEGER) {
-        if (is_int_in_tree(t2, t1->node.data.value_int)) {
-            find_int_elem(t2, t1->node.data.value_int);
+        if (is_constant_in_tree(t2, t1->node.data.value_int)) {
+            find_constant_elem(t2, t1->node.data.value_int);
             t1->node.type = INTEGER;
             t1->node.data.value_int = 1;
             return;
@@ -292,8 +254,8 @@ void transform(Tree t1, Tree t2)
     }
 
     if (t2->node.type == INTEGER) {
-        if (is_int_in_tree(t1, t2->node.data.value_int)) {
-            find_int_elem(t1, t2->node.data.value_int);
+        if (is_constant_in_tree(t1, t2->node.data.value_int)) {
+            find_constant_elem(t1, t2->node.data.value_int);
             t2->node.type = INTEGER;
             t2->node.data.value_int = 1;
             return;
@@ -301,8 +263,8 @@ void transform(Tree t1, Tree t2)
     }
 
     if (t1->node.type == FLOATING) {
-        if (is_float_in_tree(t2, t1->node.data.value_float)) {
-            find_float_elem(t2, t1->node.data.value_float);
+        if (is_constant_in_tree(t2, t1->node.data.value_float)) {
+            find_constant_elem(t2, t1->node.data.value_float);
             t1->node.type = INTEGER;
             t1->node.data.value_int = 1;
             return;
@@ -310,8 +272,8 @@ void transform(Tree t1, Tree t2)
     }
 
     if (t2->node.type == FLOATING) {
-        if (is_float_in_tree(t1, t2->node.data.value_float)) {
-            find_float_elem(t1, t2->node.data.value_float);
+        if (is_constant_in_tree(t1, t2->node.data.value_float)) {
+            find_constant_elem(t1, t2->node.data.value_float);
             t2->node.type = INTEGER;
             t2->node.data.value_int = 1;
             return;
@@ -357,14 +319,6 @@ void transform(Tree t1, Tree t2)
             transform(t2->right, t1);
 
         return;
-    }
-
-    if (t1->node.type == OPERATOR && (t1->node.data.operator == '-' || t1->node.data.operator == '+')) {
-        if (is_common(t1->left, t2) && is_common(t1->right, t2)) {
-            transform(t1->left, t1->right);
-            transform(t2->left, t2->right);
-            return;   
-        }
     }
 }
 
